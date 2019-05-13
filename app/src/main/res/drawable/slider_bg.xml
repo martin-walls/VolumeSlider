@@ -3,6 +3,9 @@
     android:shape="rectangle"
     >
 
-    <solid android:color="@color/colorPrimary" />
+    <!--<solid android:color="@color/colorPrimary" />-->
+
+    <stroke android:color="?attr/volumeBarOutline"
+        android:width="@dimen/volumeBarOutline"/>
 
 </shape>

@@ -11,9 +11,11 @@
     <LinearLayout
         android:id="@+id/slider"
         android:layout_width="wrap_content"
-        android:layout_height="15dp"
+        android:layout_height="@dimen/volumeBarHeight"
         android:layout_centerInParent="true"
         android:orientation="horizontal"
+        android:background="@drawable/slider_bg"
+        android:padding="@dimen/volumeBarOutline"
         >
 
         <ImageView
@@ -23,13 +25,13 @@
             app:srcCompat="@drawable/slider_volume"
             />
 
-        <ImageView
-            android:id="@+id/slider_bg"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="match_parent"
-            app:srcCompat="@drawable/slider_bg"
-            />
+        <!--<ImageView-->
+            <!--android:id="@+id/slider_bg"-->
+            <!--android:layout_width="0dp"-->
+            <!--android:layout_weight="1"-->
+            <!--android:layout_height="match_parent"-->
+            <!--app:srcCompat="@drawable/slider_bg"-->
+            <!--/>-->
 
     </LinearLayout>
 

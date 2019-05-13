@@ -6,17 +6,15 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.Log;
-import android.view.Surface;
 import android.view.WindowManager;
-
 import androidx.annotation.Nullable;
 
-public class Orientation implements SensorEventListener {
+public class Rotation implements SensorEventListener {
 
-    private static final String LOG_TAG = Orientation.class.getSimpleName();
+    private static final String LOG_TAG = Rotation.class.getSimpleName();
 
     public interface Listener {
-        void onOrientationChanged(float yaw);
+        void onRotationChanged(float yaw, float pitch, float roll);
     }
 
     private static final int SENSOR_DELAY_MICROS = 16 * 1000;
@@ -30,11 +28,11 @@ public class Orientation implements SensorEventListener {
     private int lastAccuracy;
     private Listener listener;
 
-    public Orientation(Activity activity) {
+    public Rotation(Activity activity) {
         windowManager = activity.getWindowManager();
         sensorManager = (SensorManager) activity.getSystemService(Activity.SENSOR_SERVICE);
 
-        gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
+        gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
     }
 
     public void startListening(Listener listener) {
@@ -43,7 +41,7 @@ public class Orientation implements SensorEventListener {
         }
         this.listener = listener;
         if (gravitySensor == null) {
-            Log.e(LOG_TAG, "Gravity sensor not available; no orientation data available.");
+            Log.e(LOG_TAG, "Rotation sensor not available; no orientation data available.");
             return;
         }
         sensorManager.registerListener(this, gravitySensor, SENSOR_DELAY_MICROS);
@@ -70,18 +68,18 @@ public class Orientation implements SensorEventListener {
             return;
         }
         if (sensorEvent.sensor == gravitySensor) {
-            updateOrientation(sensorEvent.values);
+            updateRotation(sensorEvent.values);
         }
     }
 
     @SuppressWarnings("SuspiciousNameCombination")
-    private void updateOrientation(float[] rotationVector) {
+    private void updateRotation(float[] rotationVector) {
         float[] rotationMatrix = new float[9];
         SensorManager.getRotationMatrixFromVector(rotationMatrix, rotationVector);
 
+        /*
         final int worldAxisForDeviceAxisX;
         final int worldAxisForDeviceAxisY;
-
         switch (windowManager.getDefaultDisplay().getRotation()) {
             case Surface.ROTATION_0:
             default:
@@ -101,19 +99,20 @@ public class Orientation implements SensorEventListener {
                 worldAxisForDeviceAxisY = SensorManager.AXIS_X;
                 break;
         }
+        */
 
-        float[] adjustedRotationMatrix = new float[9];
-        SensorManager.remapCoordinateSystem(rotationMatrix, worldAxisForDeviceAxisX,
-                worldAxisForDeviceAxisY, adjustedRotationMatrix);
+//        float[] adjustedRotationMatrix = new float[9];
+//        SensorManager.remapCoordinateSystem(rotationMatrix, SensorManager.AXIS_X,
+//                SensorManager.AXIS_Z, adjustedRotationMatrix);
 
         float[] orientation = new float[3];
-        SensorManager.getOrientation(adjustedRotationMatrix, orientation);
+        SensorManager.getOrientation(rotationMatrix, orientation);
 
         // convert radians to degrees
-        float yaw = orientation[0] * -57;
-//        float pitch = orientation[1] * -57;
-//        float roll = orientation[2] * -57;
+        float yaw = orientation[0] * -57; // left and right turn when upright
+        float pitch = orientation[1] * -57; // forward and backward
+        float roll = orientation[2] * -57; // left and right roll when upright
 
-        listener.onOrientationChanged(yaw);
+        listener.onRotationChanged(yaw, pitch, roll);
     }
 }

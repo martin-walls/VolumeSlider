@@ -5,23 +5,31 @@ import android.media.AudioManager;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.Display;
+import android.view.KeyEvent;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import androidx.appcompat.app.AppCompatActivity;
 
-public class MainActivity extends AppCompatActivity implements Orientation.Listener {
+public class MainActivity extends AppCompatActivity implements Rotation.Listener {
 
-    private Orientation orientation;
+    private Rotation rotation;
     private LinearLayout sliderLayout;
     private ImageView sliderVolume;
+
+    private final int ORIENTATION_FACE_UP = 0;
+    private final int ORIENTATION_FACE_DOWN = 1;
+    private final int ORIENTATION_PORTRAIT = 2;
+    private final int ORIENTATION_REVERSE_PORTRAIT = 3;
+    private final int ORIENTATION_LANDSCAPE = 4;
+    private final int ORIENTATION_REVERSE_LANDSCAPE = 5;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        orientation = new Orientation(this);
+        rotation = new Rotation(this);
         sliderLayout = findViewById(R.id.slider);
         sliderVolume = findViewById(R.id.slider_volume);
 
@@ -39,40 +47,93 @@ public class MainActivity extends AppCompatActivity implements Orientation.Liste
     @Override
     protected void onStart() {
         super.onStart();
-        orientation.startListening(this);
+        rotation.startListening(this);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        orientation.stopListening();
+        rotation.stopListening();
+    }
+
+    private int getOrientation(float pitch, float roll) {
+        if (pitch > 45) {
+            // tilted up
+            return ORIENTATION_PORTRAIT;
+        } else if (pitch < -45) {
+            // tilted down
+            return ORIENTATION_REVERSE_PORTRAIT;
+        } else if (Math.abs(roll) > 135) {
+            // upside down
+            return ORIENTATION_FACE_DOWN;
+        } else if (Math.abs(roll) < 45) {
+            // face up
+            return ORIENTATION_FACE_UP;
+        } else if (roll > 0) {
+            // landscape
+            return ORIENTATION_LANDSCAPE;
+        } else { // roll < 0
+            // upside down landscape
+            return ORIENTATION_REVERSE_LANDSCAPE;
+        }
     }
 
     @Override
-    public void onOrientationChanged(float yaw) {
-//        yaw += 180;
-        if (yaw < 0) {
-            yaw += 180;
-        } else {
-            yaw -= 180;
+    public void onRotationChanged(float yaw, float pitch, float roll) {
+
+
+        int orientation = getOrientation(pitch, roll);
+
+        float rotation;
+
+        switch (orientation) {
+            case ORIENTATION_FACE_UP:
+            case ORIENTATION_PORTRAIT:
+            default:
+                if (roll > 90) {
+                    rotation = -(180 - roll);
+                } else if (roll < -90) {
+                    rotation = 180 + roll;
+                } else {
+                    rotation = -roll;
+                }
+                break;
+//            case ORIENTATION_LANDSCAPE:
+//                rotation = pitch;
+//                break;
+//            case ORIENTATION_REVERSE_LANDSCAPE:
+//                rotation = -pitch;
+//                break;
         }
+
+//        rotation = pitch;
+//        rotation *= -1;
+
+        int rotationLimit = 45;
+
         // restrict range
-        if (yaw < -40) {
-            yaw = -40;
-        } else if (yaw > 40) {
-            yaw = 40;
+        if (rotation < -rotationLimit) {
+            rotation = -rotationLimit;
+        } else if (rotation > rotationLimit) {
+            rotation = rotationLimit;
         }
 
-        sliderLayout.setRotation(yaw);
+        switch (orientation) {
+//            case ORIENTATION_LANDSCAPE:
+//                sliderLayout.setRotation(rotation + 90);
+//                break;
+//            case ORIENTATION_REVERSE_LANDSCAPE:
+//                sliderLayout.setRotation(rotation - 90);
+//                break;
+            default:
+                sliderLayout.setRotation(rotation);
+                break;
+        }
 
-//        if (yaw < 10 && yaw > -10) {
-//            yaw = 0;
-//        }
-
-        yaw += 40;
+        rotation += rotationLimit;
 
         // get new volume
-        int newVolume = Math.round((yaw / 80) * 30);
+        int newVolume = Math.round((rotation / 80) * 30);
 
         // set volume
         AudioManager audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
@@ -84,5 +145,28 @@ public class MainActivity extends AppCompatActivity implements Orientation.Liste
         layoutParams.width = (int) (width * (newVolume / 30.0));
         sliderVolume.setLayoutParams(layoutParams);
 
+    }
+
+    // disable volume buttons
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_VOLUME_UP:
+            case KeyEvent.KEYCODE_VOLUME_DOWN:
+                return true;
+            default:
+                return super.onKeyDown(keyCode, event);
+        }
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_VOLUME_UP:
+            case KeyEvent.KEYCODE_VOLUME_DOWN:
+                return true;
+            default:
+                return super.onKeyUp(keyCode, event);
+        }
     }
 }
