@@ -138,6 +138,9 @@ public class MainActivity extends AppCompatActivity implements Rotation.Listener
 
         rotation += rotationLimit;
 
+        AudioManager audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+        int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+
         // get new volume
         int newVolume = Math.round((rotation / (rotationLimit*2)) * maxVolume);
 
