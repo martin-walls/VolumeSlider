@@ -24,6 +24,9 @@ public class MainActivity extends AppCompatActivity implements Rotation.Listener
     private final int ORIENTATION_LANDSCAPE = 4;
     private final int ORIENTATION_REVERSE_LANDSCAPE = 5;
 
+    private AudioManager audioManager;
+    private int maxVolume;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,6 +45,9 @@ public class MainActivity extends AppCompatActivity implements Rotation.Listener
         LayoutParams layoutParams = sliderLayout.getLayoutParams();
         layoutParams.width = (int) (width * 0.7);
         sliderLayout.setLayoutParams(layoutParams);
+
+        audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+        maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
     }
 
     @Override
@@ -132,9 +138,6 @@ public class MainActivity extends AppCompatActivity implements Rotation.Listener
 
         rotation += rotationLimit;
 
-        AudioManager audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
-        int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-
         // get new volume
         int newVolume = Math.round((rotation / (rotationLimit*2)) * maxVolume);
 
@@ -144,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements Rotation.Listener
 
         int width = sliderLayout.getWidth();
         LayoutParams layoutParams = sliderVolume.getLayoutParams();
-        layoutParams.width = (int) (width * (newVolume / 30.0));
+        layoutParams.width = (int) (width * (newVolume / ((float) maxVolume)));
         sliderVolume.setLayoutParams(layoutParams);
 
     }
