@@ -6,7 +6,6 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.Log;
-import android.view.WindowManager;
 import androidx.annotation.Nullable;
 
 public class Rotation implements SensorEventListener {
@@ -17,9 +16,8 @@ public class Rotation implements SensorEventListener {
         void onRotationChanged(float yaw, float pitch, float roll);
     }
 
-    private static final int SENSOR_DELAY_MICROS = 16 * 1000;
+    private static final int SENSOR_DELAY_MICROS = 8 * 1000;
 
-    private final WindowManager windowManager;
     private final SensorManager sensorManager;
 
     @Nullable
@@ -28,14 +26,13 @@ public class Rotation implements SensorEventListener {
     private int lastAccuracy;
     private Listener listener;
 
-    public Rotation(Activity activity) {
-        windowManager = activity.getWindowManager();
+    Rotation(Activity activity) {
         sensorManager = (SensorManager) activity.getSystemService(Activity.SENSOR_SERVICE);
 
         gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
     }
 
-    public void startListening(Listener listener) {
+    void startListening(Listener listener) {
         if (this.listener == listener) {
             return;
         }
@@ -47,7 +44,7 @@ public class Rotation implements SensorEventListener {
         sensorManager.registerListener(this, gravitySensor, SENSOR_DELAY_MICROS);
     }
 
-    public void stopListening() {
+    void stopListening() {
         sensorManager.unregisterListener(this);
         listener = null;
     }
@@ -72,7 +69,6 @@ public class Rotation implements SensorEventListener {
         }
     }
 
-    @SuppressWarnings("SuspiciousNameCombination")
     private void updateRotation(float[] rotationVector) {
         float[] rotationMatrix = new float[9];
         SensorManager.getRotationMatrixFromVector(rotationMatrix, rotationVector);
