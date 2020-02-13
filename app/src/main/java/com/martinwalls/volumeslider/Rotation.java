@@ -16,7 +16,7 @@ public class Rotation implements SensorEventListener {
         void onRotationChanged(float yaw, float pitch, float roll);
     }
 
-    private static final int SENSOR_DELAY_MICROS = 8 * 1000;
+    private static final int SENSOR_DELAY_MICROS = 20 * 1000;
 
     private final SensorManager sensorManager;
 
@@ -73,38 +73,10 @@ public class Rotation implements SensorEventListener {
         float[] rotationMatrix = new float[9];
         SensorManager.getRotationMatrixFromVector(rotationMatrix, rotationVector);
 
-        /*
-        final int worldAxisForDeviceAxisX;
-        final int worldAxisForDeviceAxisY;
-        switch (windowManager.getDefaultDisplay().getRotation()) {
-            case Surface.ROTATION_0:
-            default:
-                worldAxisForDeviceAxisX = SensorManager.AXIS_X;
-                worldAxisForDeviceAxisY = SensorManager.AXIS_Z;
-                break;
-            case Surface.ROTATION_90:
-                worldAxisForDeviceAxisX = SensorManager.AXIS_Z;
-                worldAxisForDeviceAxisY = SensorManager.AXIS_MINUS_X;
-                break;
-            case Surface.ROTATION_180:
-                worldAxisForDeviceAxisX = SensorManager.AXIS_MINUS_X;
-                worldAxisForDeviceAxisY = SensorManager.AXIS_MINUS_Z;
-                break;
-            case Surface.ROTATION_270:
-                worldAxisForDeviceAxisX = SensorManager.AXIS_MINUS_Z;
-                worldAxisForDeviceAxisY = SensorManager.AXIS_X;
-                break;
-        }
-        */
-
-//        float[] adjustedRotationMatrix = new float[9];
-//        SensorManager.remapCoordinateSystem(rotationMatrix, SensorManager.AXIS_X,
-//                SensorManager.AXIS_Z, adjustedRotationMatrix);
-
         float[] orientation = new float[3];
         SensorManager.getOrientation(rotationMatrix, orientation);
 
-        // convert radians to degrees
+        // convert radians to degrees, approximately
         float yaw = orientation[0] * -57; // left and right turn when upright
         float pitch = orientation[1] * -57; // forward and backward
         float roll = orientation[2] * -57; // left and right roll when upright

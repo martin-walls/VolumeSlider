@@ -11,11 +11,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import androidx.appcompat.app.AppCompatActivity;
 
-public class MainActivity extends AppCompatActivity implements Rotation.Listener {
+import com.martinwalls.volumeslider.databinding.ActivityMainBinding;
 
-    private Rotation rotation;
-    private LinearLayout sliderLayout;
-    private ImageView sliderVolume;
+public class MainActivity extends AppCompatActivity implements Rotation.Listener {
 
     private final int ORIENTATION_FACE_UP = 0;
     private final int ORIENTATION_FACE_DOWN = 1;
@@ -24,17 +22,19 @@ public class MainActivity extends AppCompatActivity implements Rotation.Listener
     private final int ORIENTATION_LANDSCAPE = 4;
     private final int ORIENTATION_REVERSE_LANDSCAPE = 5;
 
+    private ActivityMainBinding binding;
+
+    private Rotation rotation;
+
     private AudioManager audioManager;
-    private int maxVolume;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
         rotation = new Rotation(this);
-        sliderLayout = findViewById(R.id.slider);
-        sliderVolume = findViewById(R.id.slider_volume);
 
         Display display = getWindowManager().getDefaultDisplay();
         DisplayMetrics metrics = new DisplayMetrics();
@@ -42,12 +42,11 @@ public class MainActivity extends AppCompatActivity implements Rotation.Listener
 
         int width = metrics.widthPixels;
 
-        LayoutParams layoutParams = sliderLayout.getLayoutParams();
+        LayoutParams layoutParams = binding.slider.getLayoutParams();
         layoutParams.width = (int) (width * 0.7);
-        sliderLayout.setLayoutParams(layoutParams);
+        binding.slider.setLayoutParams(layoutParams);
 
-        audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
-        maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
     }
 
     @Override
@@ -62,59 +61,12 @@ public class MainActivity extends AppCompatActivity implements Rotation.Listener
         rotation.stopListening();
     }
 
-    private int getOrientation(float pitch, float roll) {
-        if (pitch > 45) {
-            // tilted up
-            return ORIENTATION_PORTRAIT;
-        } else if (pitch < -45) {
-            // tilted down
-            return ORIENTATION_REVERSE_PORTRAIT;
-        } else if (Math.abs(roll) > 135) {
-            // upside down
-            return ORIENTATION_FACE_DOWN;
-        } else if (Math.abs(roll) < 45) {
-            // face up
-            return ORIENTATION_FACE_UP;
-        } else if (roll > 0) {
-            // landscape
-            return ORIENTATION_LANDSCAPE;
-        } else { // roll < 0
-            // upside down landscape
-            return ORIENTATION_REVERSE_LANDSCAPE;
-        }
-    }
-
     @Override
     public void onRotationChanged(float yaw, float pitch, float roll) {
 
+        float rotation = calculateRotation(yaw, pitch, roll);
 
-        int orientation = getOrientation(pitch, roll);
-
-        float rotation;
-
-        switch (orientation) {
-            case ORIENTATION_FACE_UP:
-            case ORIENTATION_PORTRAIT:
-            default:
-                if (roll > 90) {
-                    rotation = -(180 - roll);
-                } else if (roll < -90) {
-                    rotation = 180 + roll;
-                } else {
-                    rotation = -roll;
-                }
-                break;
-//            case ORIENTATION_LANDSCAPE:
-//                rotation = pitch;
-//                break;
-//            case ORIENTATION_REVERSE_LANDSCAPE:
-//                rotation = -pitch;
-//                break;
-        }
-
-//        rotation = pitch;
-//        rotation *= -1;
-
+        // allow the slider to rotate 45 degrees each way
         int rotationLimit = 45;
 
         // restrict range
@@ -124,35 +76,52 @@ public class MainActivity extends AppCompatActivity implements Rotation.Listener
             rotation = rotationLimit;
         }
 
-        switch (orientation) {
-//            case ORIENTATION_LANDSCAPE:
-//                sliderLayout.setRotation(rotation + 90);
-//                break;
-//            case ORIENTATION_REVERSE_LANDSCAPE:
-//                sliderLayout.setRotation(rotation - 90);
-//                break;
-            default:
-                sliderLayout.setRotation(rotation);
-                break;
-        }
+        // rotate the slider on screen
+        setSliderRotation(rotation);
 
+        // shift rotation value to start at 0, so volume can be calculated from it
         rotation += rotationLimit;
 
-        AudioManager audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
-        int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        int maxVolume = getSystemMaxVolume();
 
         // get new volume
         int newVolume = Math.round((rotation / (rotationLimit*2)) * maxVolume);
 
         // set volume
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, AudioManager.FLAG_PLAY_SOUND);
+        setSystemVolume(newVolume);
 
+        setSliderWidthPercent((float) newVolume / maxVolume);
+    }
 
-        int width = sliderLayout.getWidth();
-        LayoutParams layoutParams = sliderVolume.getLayoutParams();
-        layoutParams.width = (int) (width * (newVolume / ((float) maxVolume)));
-        sliderVolume.setLayoutParams(layoutParams);
+    private void setSliderWidthPercent(float percent) {
+        int fullWidth = binding.slider.getWidth();
+        LayoutParams layoutParams = binding.sliderVolume.getLayoutParams();
+        layoutParams.width = (int) (fullWidth * percent);
+        binding.sliderVolume.setLayoutParams(layoutParams);
+    }
 
+    private void setSliderRotation(float rotation) {
+        binding.slider.setRotation(rotation);
+    }
+
+    private float calculateRotation(float yaw, float pitch, float roll) {
+        float rotation;
+        if (roll > 90) {
+            rotation = -180 + roll;
+        } else if (roll < -90) {
+            rotation = 180 + roll;
+        } else {
+            rotation = -roll;
+        }
+        return rotation;
+    }
+
+    private int getSystemMaxVolume() {
+        return audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+    }
+
+    private void setSystemVolume(int volume) {
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, AudioManager.FLAG_PLAY_SOUND);
     }
 
     // disable volume buttons
